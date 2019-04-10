@@ -9,17 +9,25 @@ output: powerpoint_presentation
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-## R Markdown
+## Explainability 
 
-This is an R Markdown presentation. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r}
+model_1 <- lm(mpg ~ disp + cyl, data = mtcars)
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document.
+summary(model_1)
+```
 
-## Slide with Bullets
+- What do we mean by interpretability and why do we need it? (local vs global)
+- Interpretable Models
+- Feature Importances
+- Model Agnostic Approaches and their implementation
+- Use Case
 
-- Bullet 1
-- Bullet 2
-- Bullet 3
+## Why do we need it 
+
+- Regulation (GDPR)
+- Ethical Obligations
+- Curosity
 
 ## Slide with R Output
 

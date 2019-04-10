@@ -39,3 +39,7 @@ rsconnect/
 # remove R Datastores
 
 *.DS_Store
+
+# remove actual powerpoint files
+
+*.pptx
