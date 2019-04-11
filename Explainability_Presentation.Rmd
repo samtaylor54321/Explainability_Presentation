@@ -2,9 +2,6 @@
 title: 'Through the Looking Glass: Interpretability in Machine Learning'
 author: "Sam Taylor"
 date: "10/04/2019"
-output:
-  ioslides_presentation: default
-  powerpoint_presentation: default
 ---
 
 ```{r setup, include=FALSE}
@@ -13,19 +10,18 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ## Introduction 
 
-- What do we mean by interpretability and why do we need it? (local vs global)
+- What do we mean by interpretability and why do we need it? 
 - Interpretable Models
 - Feature Importances
 - Model Agnostic Approaches and their implementation
-- Use Case
+- Case Study - Intelligent Triage
 
 ## Facebook implements explainability on Newsfeeds
 
 ![https://www.techapeek.com/2019/04/01/facebook-to-show-explanations-why-content-shows-up-on-users-news-feeds/](images/facebook.png) 
+## Interpretability & why we need it
 
-## Interpretability & Why we need it
-
-{definition}
+Many people say machine learning models are "black boxes", in the sense that they they can make good predictions but you can't understand the logic behind those predictions. This statement is true in the sense that most data scientists don't know how to extract insights from models yet 
 
 - Regulation (GDPR)
 - Ethical Obligations & Trust
@@ -38,5 +34,7 @@ knitr::opts_chunk$set(echo = FALSE)
 model_1 <- lm(mpg ~ disp + cyl, data = mtcars)
 summary(model_1)
 ```
+
+
 
 
