@@ -1,11 +1,15 @@
 ---
 title: 'Through the Looking Glass: Interpretability in Machine Learning'
-author: "Sam Taylor"
+author: 'Sam Taylor,  github: @samtaylor54321'
 date: "10/04/2019"
+output: powerpoint_presentation
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(broom)
 ```
 
 ## Introduction 
@@ -19,6 +23,7 @@ knitr::opts_chunk$set(echo = FALSE)
 ## Facebook implements explainability on Newsfeeds
 
 ![https://www.techapeek.com/2019/04/01/facebook-to-show-explanations-why-content-shows-up-on-users-news-feeds/](images/facebook.png) 
+
 ## Interpretability & why we need it
 
 Many people say machine learning models are "black boxes", in the sense that they they can make good predictions but you can't understand the logic behind those predictions. This statement is true in the sense that most data scientists don't know how to extract insights from models yet 
@@ -30,9 +35,14 @@ Many people say machine learning models are "black boxes", in the sense that the
 
 ## Interpretable Models
 
+```{r model, echo = TRUE, eval=FALSE}
+model_1 <- lm(mpg ~ disp + cyl + hp + wt, data = mtcars)
+```
+
 ```{r cars, echo = FALSE}
-model_1 <- lm(mpg ~ disp + cyl, data = mtcars)
-summary(model_1)
+model_1 <- lm(mpg ~ disp + cyl + hp + wt, data = mtcars)
+model_summary <- summary(model_1)
+broom::tidy(model_summary) %>% knitr::kable()
 ```
 
 
