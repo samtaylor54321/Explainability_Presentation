@@ -1,21 +1,17 @@
 ---
-title: "Explainability_Presentation"
+title: 'Through the Looking Glass: Interpretability in Machine Learning'
 author: "Sam Taylor"
 date: "10/04/2019"
-output: powerpoint_presentation
+output:
+  ioslides_presentation: default
+  powerpoint_presentation: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-## Explainability 
-
-```{r}
-model_1 <- lm(mpg ~ disp + cyl, data = mtcars)
-
-summary(model_1)
-```
+## Introduction 
 
 - What do we mean by interpretability and why do we need it? (local vs global)
 - Interpretable Models
@@ -23,21 +19,24 @@ summary(model_1)
 - Model Agnostic Approaches and their implementation
 - Use Case
 
-## Why do we need it 
+## Facebook implements explainability on Newsfeeds
+
+![https://www.techapeek.com/2019/04/01/facebook-to-show-explanations-why-content-shows-up-on-users-news-feeds/](images/facebook.png) 
+
+## Interpretability & Why we need it
+
+{definition}
 
 - Regulation (GDPR)
-- Ethical Obligations
-- Curosity
+- Ethical Obligations & Trust
+- Debugging & Feature Engineering
+- Informing Decision Making
 
-## Slide with R Output
+## Interpretable Models
 
-```{r cars, echo = TRUE}
-summary(cars)
+```{r cars, echo = FALSE}
+model_1 <- lm(mpg ~ disp + cyl, data = mtcars)
+summary(model_1)
 ```
 
-## Slide with Plot
-
-```{r pressure}
-plot(pressure)
-```
 

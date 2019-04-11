@@ -43,3 +43,8 @@ rsconnect/
 # remove actual powerpoint files
 
 *.pptx
+
+
+# no images
+
+*.png
