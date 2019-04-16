@@ -5,8 +5,8 @@ date: "10/04/2019"
 output: powerpoint_presentation
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+```{r setup, include=FALSE, echo =FALSE}
+#knitr::opts_chunk$set(echo = FALSE)
 
 library(tidyverse)
 library(broom)
@@ -36,7 +36,7 @@ Many people say machine learning models are "black boxes", in the sense that the
 ## Interpretable Models
 
 ```{r model, echo = TRUE, eval=FALSE}
-model_1 <- lm(mpg ~ disp + cyl + hp + wt, data = mtcars)
+lm(mpg ~ disp + cyl + hp + wt, data = mtcars)
 ```
 
 ```{r cars, echo = FALSE}
@@ -45,6 +45,49 @@ model_summary <- summary(model_1)
 broom::tidy(model_summary) %>% knitr::kable()
 ```
 
+## Permutation Importance
 
+- Permutation importance is calculated after a model has been fitted. So we won't change the model or change what predictions we'd get for a given value of height, sock-count, etc.
+
+- Instead we will ask the following question: If I randomly shuffle a single column of the validation data, leaving the target and all other columns in place, how would that affect the accuracy of predictions in that now-shuffled data?
+
+
+{Plot}
+
+## Partial Dependance Plots
+
+- Like permutation importance, partial dependence plots are calculated after a model has been fit.
+
+- we repeatedly alter the value for one variable to make a series of predictions. We could predict the outcome if the team had the ball only 40% of the time. We then predict with them having the ball 50% of the time. Then predict again for 60%. And so on. We trace out predicted outcomes (on the vertical axis) as we move from small values of ball possession to large values (on the horizontal axis).
+
+-  we plot the average predicted outcome on the vertical axis.
+
+{Plot}
+
+## LIME
+
+Explanation - fitting a local interpretible model to the feature  space in order to 
+explain a specific prediction. 
+Code
+Graphic
+Pros and Cons
+
+
+## SHAP 
+
+Explanation - average marginal contribution across all possible coalitions. It takes the form of a null player if it isn't in the coalition (how much does it differ if this feature takes 
+a base value rather than actual values). SHAP is slightly different to Shapley Values to avoid it becoming computationally intractable (2k) but the premise is the same. 
+the premise is the same.
+
+Example that works for video as well. Can it be applied to audio data????
+Code (Python/R Code)
+Graphic (Shapley Plots)
+Pros and Cons 
+
+## Use Case
+
+Intelligent Triage
+Example Plot
+NLP
 
 
