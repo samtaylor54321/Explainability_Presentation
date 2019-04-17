@@ -10,6 +10,7 @@ output: powerpoint_presentation
 
 library(tidyverse)
 library(broom)
+library(mlr)
 ```
 
 ## Introduction 
@@ -52,7 +53,11 @@ broom::tidy(model_summary) %>% knitr::kable()
 - Instead we will ask the following question: If I randomly shuffle a single column of the validation data, leaving the target and all other columns in place, how would that affect the accuracy of predictions in that now-shuffled data?
 
 
-{Plot}
+```{r}
+?generateFeatureImportanceData
+```
+
+
 
 ## Partial Dependance Plots
 
