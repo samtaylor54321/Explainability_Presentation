@@ -1,11 +1,14 @@
 ---
 title: 'Through the Looking Glass: Interpretability in Machine Learning'
-author: 'Sam Taylor,  github: @samtaylor54321'
+author: 'Sam Taylor,  Github: @samtaylor54321'
 date: "10/04/2019"
-output: powerpoint_presentation
+output:
+  slidy_presentation: default
+  powerpoint_presentation: default
 ---
 
 ```{r setup, include=FALSE, echo =FALSE}
+knitr::opts_chunk$set(cache=TRUE)
 #knitr::opts_chunk$set(echo = FALSE)
 
 library(tidyverse)
@@ -13,28 +16,32 @@ library(broom)
 library(mlr)
 ```
 
-## Introduction 
+Introduction 
+====================================
 
-- What do we mean by interpretability and why do we need it? 
+- Interpretability and why do we need it? 
 - Interpretable Models
-- Feature Importances
-- Model Agnostic Approaches and their implementation
+- Permutation Importances
+- Partial Dependancy Plots
+- Model Agnostic Approaches (LIME & SHAP)
 - Case Study - Intelligent Triage
 
-## Facebook implements explainability on Newsfeeds
-
-![https://www.techapeek.com/2019/04/01/facebook-to-show-explanations-why-content-shows-up-on-users-news-feeds/](images/facebook.png) 
-
-## Interpretability & why we need it
-
-Many people say machine learning models are "black boxes", in the sense that they they can make good predictions but you can't understand the logic behind those predictions. This statement is true in the sense that most data scientists don't know how to extract insights from models yet 
-
+Interpretability & why we need it
+====================================
 - Regulation (GDPR)
 - Ethical Obligations & Trust
 - Debugging & Feature Engineering
 - Informing Decision Making
 
-## Interpretable Models
+![](images/accuracy_tradeoff.png)
+
+Facebook implements explainability on Newsfeeds
+====================================
+
+![https://www.techapeek.com/2019/04/01/facebook-to-show-explanations-why-content-shows-up-on-users-news-feeds/](images/facebook.png) 
+
+Interpretable Models
+====================================
 
 ```{r model, echo = TRUE, eval=FALSE}
 lm(mpg ~ disp + cyl + hp + wt, data = mtcars)
@@ -46,20 +53,19 @@ model_summary <- summary(model_1)
 broom::tidy(model_summary) %>% knitr::kable()
 ```
 
-## Permutation Importance
+Permutation Importance
+====================================
 
 - Permutation importance is calculated after a model has been fitted. So we won't change the model or change what predictions we'd get for a given value of height, sock-count, etc.
 
 - Instead we will ask the following question: If I randomly shuffle a single column of the validation data, leaving the target and all other columns in place, how would that affect the accuracy of predictions in that now-shuffled data?
 
-
 ```{r}
 ?generateFeatureImportanceData
 ```
 
-
-
-## Partial Dependance Plots
+Partial Dependance Plots
+====================================
 
 - Like permutation importance, partial dependence plots are calculated after a model has been fit.
 
@@ -69,7 +75,8 @@ broom::tidy(model_summary) %>% knitr::kable()
 
 {Plot}
 
-## LIME
+LIME
+====================================
 
 Explanation - fitting a local interpretible model to the feature  space in order to 
 explain a specific prediction. 
@@ -78,7 +85,8 @@ Graphic
 Pros and Cons
 
 
-## SHAP 
+SHAP 
+====================================
 
 Explanation - average marginal contribution across all possible coalitions. It takes the form of a null player if it isn't in the coalition (how much does it differ if this feature takes 
 a base value rather than actual values). SHAP is slightly different to Shapley Values to avoid it becoming computationally intractable (2k) but the premise is the same. 
@@ -89,10 +97,24 @@ Code (Python/R Code)
 Graphic (Shapley Plots)
 Pros and Cons 
 
-## Use Case
+Use Case
+====================================
 
 Intelligent Triage
 Example Plot
 NLP
 
+A Python Chunk
+====================================
 
+deploying the tree explainer in Python 
+
+```{python}
+x = 42 * 2
+print(x) 
+```
+
+Slide With Image Left
+====================================
+
+test slidee
