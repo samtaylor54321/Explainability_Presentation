@@ -462,6 +462,7 @@ Sam Taylor, Github: <span class="citation">@samtaylor54321</span>
 </div>
 <div id="interpretable-models" class="slide section level1">
 <h1>Interpretable Models</h1>
+<p>Deploying interpretable models, sacrificing performance (Linear Regression, Logistic Regression, Decision Trees)</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="kw">lm</span>(mpg <span class="op">~</span><span class="st"> </span>disp <span class="op">+</span><span class="st"> </span>cyl <span class="op">+</span><span class="st"> </span>hp <span class="op">+</span><span class="st"> </span>wt, <span class="dt">data =</span> mtcars)</a></code></pre></div>
 <table>
 <thead>
@@ -537,21 +538,13 @@ Sam Taylor, Github: <span class="citation">@samtaylor54321</span>
 <h1>SHAP</h1>
 <p>Explanation - average marginal contribution across all possible coalitions. It takes the form of a null player if it isn’t in the coalition (how much does it differ if this feature takes a base value rather than actual values). SHAP is slightly different to Shapley Values to avoid it becoming computationally intractable (2k) but the premise is the same. the premise is the same.</p>
 <p>Example that works for video as well. Can it be applied to audio data???? Code (Python/R Code) Graphic (Shapley Plots) Pros and Cons</p>
-</div>
-<div id="use-case" class="slide section level1">
-<h1>Use Case</h1>
-<p>Intelligent Triage Example Plot NLP</p>
-</div>
-<div id="a-python-chunk" class="slide section level1">
-<h1>A Python Chunk</h1>
-<p>deploying the tree explainer in Python</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode python"><code class="sourceCode python"><a class="sourceLine" id="cb3-1" data-line-number="1">x <span class="op">=</span> <span class="dv">42</span> <span class="op">*</span> <span class="dv">2</span></a>
 <a class="sourceLine" id="cb3-2" data-line-number="2"><span class="bu">print</span>(x) </a></code></pre></div>
 <pre><code>## 84</code></pre>
 </div>
-<div id="slide-with-image-left" class="slide section level1">
-<h1>Slide With Image Left</h1>
-<p>test slidee</p>
+<div id="use-case" class="slide section level1">
+<h1>Use Case</h1>
+<p>Intelligent Triage Example Plot NLP</p>
 </div>
 
   <!-- dynamically load mathjax for compatibility with self-contained -->

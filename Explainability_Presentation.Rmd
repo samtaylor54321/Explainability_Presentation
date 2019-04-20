@@ -43,6 +43,8 @@ Facebook implements explainability on Newsfeeds
 Interpretable Models
 ====================================
 
+Deploying interpretable models, sacrificing performance (Linear Regression, Logistic Regression, Decision Trees)
+
 ```{r model, echo = TRUE, eval=FALSE}
 lm(mpg ~ disp + cyl + hp + wt, data = mtcars)
 ```
@@ -97,6 +99,11 @@ Code (Python/R Code)
 Graphic (Shapley Plots)
 Pros and Cons 
 
+```{python}
+x = 42 * 2
+print(x) 
+```
+
 Use Case
 ====================================
 
@@ -104,17 +111,3 @@ Intelligent Triage
 Example Plot
 NLP
 
-A Python Chunk
-====================================
-
-deploying the tree explainer in Python 
-
-```{python}
-x = 42 * 2
-print(x) 
-```
-
-Slide With Image Left
-====================================
-
-test slidee
