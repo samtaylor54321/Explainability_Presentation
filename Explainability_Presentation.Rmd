@@ -1,217 +1,317 @@
 ---
 title: 'Through the Looking Glass: Interpretability in Machine Learning'
 author: 'Sam Taylor,  Github: @samtaylor54321'
-date: "10/04/2019"
-output:
-  slidy_presentation: default
-  powerpoint_presentation: default
+date: "25/04/2019"
+output: slidy_presentation
 ---
-
+ 
 ```{r setup, include=FALSE, echo =FALSE}
 knitr::opts_chunk$set(cache=TRUE)
 #knitr::opts_chunk$set(echo = FALSE)
-
+ 
+# Load Packages
+ 
 library(tidyverse)
 library(broom)
 library(mlr)
-
-url="http://freakonometrics.free.fr/german_credit.csv"
-credit_raw <- read.csv(url, header = TRUE, sep = ",")
-
+library(evtree)
+library(forcats)
+library(randomForest)
+library(caret)
+library(mmpf)
+library(lime)
+library(iml)
+ 
+# Load Dataset
+ 
+credit_raw <- evtree::GermanCredit
+ 
+# Set theme to BW
+ 
+theme_set(theme_bw())
+ 
 # Preprocessing ---------------------------------------------------------------------
-
-credit_processed <- credit_raw %>% 
-              transmute(good_loan = Creditability,
-                     positive_account_balance = if_else(Account.Balance ==1,0,1), 
-                     loan_duration = Duration.of.Credit..month.,
-                     loan_purpose = fct_recode(as.factor(Purpose), 
-                                                 car = "0",
-                                                 car = "1",
-                                                 furniture = "2",
-                                                 electronics = "3",
-                                                 other = "4",
-                                                 other = "5",
-                                                 education = "6",
-                                                 education = "8",
-                                                 business = "9",
-                                                 other = "10"),
-                     loan_amount = Credit.Amount,
-                     employed  = if_else( Length.of.current.employment == 1, 0, 1),
-                     dependents = No.of.dependents,
-                     contact_details_provided = if_else(Telephone ==1, 0 , 1),
-                     age = Age..years.
-                  )
-
+ 
+credit_processed <- credit_raw %>%
+  transmute(good_loan = credit_risk,
+            positive_account_balance = if_else(status =="... < 0 DM",0,1),
+            loan_duration = duration,
+            loan_purpose = fct_recode(as.factor(purpose),
+                                      car = "car (new)",
+                                      car = "car (used)",
+                                      furniture = "furniture/equipment",
+                                      electronics = "radio/television",
+                                      other = "domestic appliances",
+                                      other = "repairs",
+                                      education = "education",
+                                      education = "retraining",
+                                      business = "business",
+                                      other = "others"),
+            loan_amount = amount,
+            employment_length  = employment_duration,
+            age = age
+  )
+ 
 # create dummy variables using reference category
-
-credit_processed <- createDummyFeatures(credit_processed, target = "good_loan", method = "reference")
-
-# Set task
-
-class_task <- makeClassifTask(data=credit_processed, target="good_loan")
-
+ 
+credit_processed <- createDummyFeatures(credit_processed, target="good_loan", method='reference')
+ 
 # create holdout set
-
-hold_out <- makeResampleInstance("Holdout",class_task)
-
-credit_train <- subsetTask(class_task,hold_out$train.inds[[1]]) 
-credit_test <- subsetTask(class_task,hold_out$test.inds[[1]])
-
-# create training task
-
-training_task <- makeClassifTask(data=credit_train$env$data, target="good_loan")
-
+ 
+trainIndex <- createDataPartition(credit_processed$good_loan, p = .6, list = FALSE, times = 1)
+ 
+credit_train <- credit_processed[trainIndex, ]
+credit_test <- credit_processed[-trainIndex, ]
+ 
+# Set task
+ 
+class_task <- makeClassifTask(data=credit_train, target="good_loan", positive='good')
+ 
 ```
-
-Introduction 
+ 
+Introduction
 ====================================
-
-- Interpretability and why do we need it? 
+ 
+- Interpretability and why do we need it?
 - Interpretable Models
 - Permutation Importances
 - Partial Dependancy Plots
-- Model Agnostic Approaches (LIME & SHAP)
-- Intelligent Triage
-
+- LIME
+- Shapley Values
+ 
 Interpretability & why we need it
 ====================================
+ 
 - Regulation (GDPR)
 - Ethical Obligations & Trust
 - Debugging & Feature Engineering
 - Informing Decision Making
-
+ 
 ![](images/accuracy_tradeoff.png)
-
+ 
 Facebook implements explainability on Newsfeeds
 ====================================
-
-![https://www.techapeek.com/2019/04/01/facebook-to-show-explanations-why-content-shows-up-on-users-news-feeds/](images/facebook.png) 
-
+ 
+![https://www.theguardian.com/technology/2019/apr/01/why-am-i-seeing-this-new-facebook-tool-to-demystify-news-feed](images/facebook.png)
+ 
 Intelligent Triage
 ====================================
-
-DWP needs to provide a welfare system to the population of the UK, but needs to decide which customers are cheating the system and which aren't. How do use machine learning to do this and be able to explain to our customers why this is the case. 
-
-A toy example - German Credit Dataset, identify good and bad loans based on a number of different variables including account balance, loan duration, loan amount, number of dependants, purpose of loan, age and if the loanee is employed. 
-
-1000 records split 2/3 training and 1/3 holdout test set. 
-
+ 
+DWP needs to provide a welfare system to the population of the UK, but needs to decide which customers are cheating the system and which aren't. How do use machine learning to do this and be able to explain to our customers why this is the case.
+ 
+A toy example - German Credit Dataset, identify good and bad loans based on a number of different variables including account balance, loan duration, loan amount, number of dependants, purpose of loan, age and if the loanee is employed.
+ 
+1000 records split 2/3 training and 1/3 holdout test set.
+ 
 Approach 1: Interpretable Models
 ====================================
-
-Deploying interpretable models, sacrificing performance but maximising explainability of the model. 
-
-Coefficients of Logistic Regression
-
-```{r cars, echo = FALSE}
-
+ 
+- Deploying interpretable models, sacrificing performance but maximising explainability of the model.
+ 
+```{r logistic_regression, echo = FALSE, warning=FALSE}
+ 
 # Set learner
-
+ 
 glm_learner <- makeLearner(cl="classif.logreg", predict.type ='prob')
-
+ 
 # Train learner on task
-
-glm_model <- train(glm_learner, training_task)
-
-# coefficients
-
-coef(getLearnerModel(glm_model, more.unwrap = TRUE)) #%>% knitr::kable()
-
-# Assess model performance
-
-glm_pred <- predict(object=glm_model,newdata=credit_test$env$data)
-
+ 
+glm_model <- mlr::train(glm_learner, class_task)
+ 
+# coefficientS
+ 
+terms <- coef(getLearnerModel(glm_model, more.unwrap = TRUE))
+values <- coef(getLearnerModel(glm_model, more.unwrap = TRUE)) %>% tibble()
+ 
+tibble(terms = names(terms), values = values$.) %>% mutate(positive = values >0) %>%
+  filter(terms !="(Intercept)") %>%
+  ggplot(aes(x=fct_reorder(terms, values), y=values, fill = positive)) +
+  geom_col(show.legend = FALSE) + coord_flip() + theme_bw() +
+  ylab("Coefficients") + xlab("") +
+  ggtitle("Logistic Regression Coefficients") +
+  scale_fill_manual(values = c('#66A61E','#FF0000'))
+ 
 ```
-
+ 
 Performance of Logistic Regression Model
-
-```{r, echo = FALSE}
+ 
+```{r logreg_performance, echo = FALSE, warning=FALSE}
+ 
+# Assess model performance
+ 
+glm_pred <- predict(object=glm_model,newdata=credit_test)
+ 
 performance(glm_pred, measures = list(f1, auc))
 ```
-
+ 
 Approach 2: Permutation Importance
 ====================================
-
+ 
 - Permutation importance is calculated after a model has been fitted. So we won't change the model or change what predictions we'd get for a given value of height, sock-count, etc.
-
+ 
 - Instead we will ask the following question: If I randomly shuffle a single column of the validation data, leaving the target and all other columns in place, how would that affect the accuracy of predictions in that now-shuffled data?
-
-```{r, echo=FALSE}
+ 
+```{r rf, echo=FALSE}
 # Set learner
-
-rf_learner <- makeLearner(cl="classif.ranger",
-                          predict.type ='prob')
-
+ 
+rf_learner <- makeLearner(cl="classif.randomForest", predict.type ='prob')
+ 
 # Train learner on task
-
-rf_model <- train(rf_learner, class_task)
-
+ 
+rf_model <- mlr::train(rf_learner, class_task)
+ 
 # Get Permutation Importances
-
+ 
 importance <- generateFeatureImportanceData(class_task, method = 'permutation.importance',
-                              learner =rf_learner, measure =f1)
-```
-
-Need to change colour pallet
-
-```{r, echo=FALSE}
-importance$res %>% gather(feature, importance) %>% 
-  ggplot(aes(x=fct_reorder(feature, desc(importance)), y=abs(importance),fill =feature)) + 
+                              learner =rf_learner, measure =auc)
+ 
+# Plot Importance
+ 
+importance$res %>% gather(feature, importance) %>%
+  ggplot(aes(x=fct_reorder(feature, desc(importance)), y=abs(importance),fill =feature)) +
   geom_col(show.legend = FALSE) + coord_flip() + theme_bw() +
   labs(title = "Random Forest Permutation Importance") +
-  xlab("") + ylab("Permutation Importance")
+  xlab("") + ylab("Permutation Importance") + scale_fill_hue(h = c(200, 300))
 ```
-
+ 
 Assess model performance
-
-```{r, echo=FALSE}
-rf_pred <- predict(object=rf_model,newdata=credit_test$env$data)
-
-performance(rf_pred, measures = list(f1, auc))
+ 
+```{r rf_performance, echo=FALSE}
+rf_pred <- predict(object=rf_model,newdata=credit_test)
+ 
+performance(rf_pred, measures = list(f1, auc)) %>% knitr::kable()
 ```
-
+ 
 Approach 3: Partial Dependance Plots
 ====================================
-
+ 
 - Like permutation importance, partial dependence plots are calculated after a model has been fit.
-
+ 
 - we repeatedly alter the value for one variable to make a series of predictions. We could predict the outcome if the team had the ball only 40% of the time. We then predict with them having the ball 50% of the time. Then predict again for 60%. And so on. We trace out predicted outcomes (on the vertical axis) as we move from small values of ball possession to large values (on the horizontal axis).
-
+ 
 -  we plot the average predicted outcome on the vertical axis.
-
-{Plot}
-
+ 
+```{r PDP, echo = FALSE}
+ 
+# Generate Learner
+ 
+xgb_learner <- makeLearner(cl="classif.xgboost", predict.type ='prob')
+ 
+# Train learner on task
+ 
+xgb_model <- mlr::train(xgb_learner, class_task)
+ 
+# Generate Partial Dependance Plot
+ 
+pd_plots <- generatePartialDependenceData(xgb_model, class_task)
+ 
+tibble(percent_good = pd_plots$data$good,loan_duration = pd_plots$data$loan_duration) %>%
+  filter(!is.na(loan_duration)) %>%
+  ggplot(aes(x=loan_duration, y=percent_good)) + geom_line() + theme_bw() + geom_point() +
+  xlab("Loan Duration") + ylab("Predicted Outcome (Good Loan)") +
+  ggtitle("Partial Dependance Plot - Loan Duration")
+ 
+```
+ 
+Assess model performance
+ 
+```{r}
+# Assess model performance
+ 
+xgb_pred <- predict(object=xgb_model,newdata=credit_test)
+ 
+performance(xgb_pred, measures = list(f1, auc)) %>% knitr::kable()
+```
+ 
 Approach 4: LIME
 ====================================
-
-Explanation - fitting a local interpretible model to the feature  space in order to 
-explain a specific prediction. 
-Code
-Graphic
-Pros and Cons
-
-
-Approach 5: SHAP 
+ 
+Explanation - fitting a local interpretible model to the feature  space in order to
+explain a specific prediction.
+ 
+Approach 4: LIME
 ====================================
-
-Explanation - average marginal contribution across all possible coalitions. It takes the form of a null player if it isn't in the coalition (how much does it differ if this feature takes 
-a base value rather than actual values). SHAP is slightly different to Shapley Values to avoid it becoming computationally intractable (2k) but the premise is the same. 
-the premise is the same.
-
-Example that works for video as well. Can it be applied to audio data????
-Code (Python/R Code)
-Graphic (Shapley Plots)
-Pros and Cons 
-
-```{python}
-x = 42 * 2
-print(x) 
+ 
+```{r}
+ 
+ 
+ 
 ```
-
-Use Case
+ 
+ 
+Approach 4: LIME
 ====================================
-
+ 
+- The underlying machine learning model used for prediction can change however the interpretable model can be retained throughout. It    also allows for statements to be made about changes in predictions.
+ 
+- Explanations can be made sparse through shrinkage methods (LASSO) or short decision trees which make them much more straightforward    to interpret. It is possible to use other features than the original model which are less abstract (eg. text embeddings vs presence    of words in sentences)
+ 
+- It may not necessarily be sufficient for full explanations which may not be practical for GDPR requirements or debugging any models    produced.
+ 
+- LIME's fidelity measure provides an estimate of how good that particular model is and if it can be considered reliable.
+ 
+- Defining the neighbourhood in which the local model is fit is tricky
+ 
+- Replicability of explanations?
+ 
+Approach 5: SHAP
+====================================
+ 
+Explanation - average marginal contribution across all possible coalitions. It takes the form of a null player if it isn't in the coalition (how much does it differ if this feature takes
+a base value rather than actual values). SHAP is slightly different to Shapley Values to avoid it becoming computationally intractable (2k) but the premise is the same.
+the premise is the same.
+ 
+The Shapley value can be misinterpreted. The Shapley value of a feature value is not the difference of the predicted value after removing the feature from the model training. The interpretation of the Shapley value is: Given the current set of feature values, the contribution of a feature value to the difference between the actual prediction and the mean prediction is the estimated Shapley value.
+ 
+Approach 5: SHAP
+====================================
+ 
+Graphic (Shapley Plots) - Single Case
+ 
+Approach 5: SHAP
+====================================
+ 
+Graphic (Shapley Plots) - Agg Case
+ 
+Approach 5: SHAP
+====================================
+ 
+Graphic (Shapley Plots) - Further Development
+ 
+Approach 5: SHAP
+====================================
+ 
+- The difference between the prediction and the average prediction is fairly distributed among the feature values. This property distinguishes the Shapley value from other methods such as LIME. LIME does not guarantee that the prediction is fairly distributed among the features.
+ 
+- The Shapley value allows contrastive explanations. Instead of comparing a prediction to the average prediction of the entire dataset, you could compare it to a subset or even to a single data point. This contrastiveness is also something that local models like LIME do not have.
+ 
+- The Shapley value requires a lot of computing time. In 99.9% of real-world problems, only the approximate solution is feasible. An exact computation of the Shapley value is computationally expensive because there are 2k possible coalitions of the feature values. Sampling coalitions may assist here.
+ 
+- The Shapley value is the wrong explanation method if you seek sparse explanations. Explanations created with the Shapley value method always use all the features.
+ 
+- The Shapley value returns a simple value per feature, but no prediction model like LIME. This means it cannot be used to make statements about changes in prediction for changes in the input, such as: “If I were to earn €300 more a year, my credit score would increase by 5 points.”
+ 
 Intelligent Triage
-Example Plot
-NLP
-
+====================================
+ 
+Permutation Importances  => SHAP (Tree Explainer)
+NLP (example graphic)
+Issues with compute (takes approx 7700 hours to work for entire UC load)
+Making explanations sparse by excluding certain features which fall below a specific threshold.
+KMeans Clustering prior to reduce the number of explanations required.
+ 
+References
+====================================
+ 
+Molnar, C. (2019), "Interpretable Machine Learning",
+https://christophm.github.io/interpretable-ml-book/
+ 
+Alvarez-Melis, David, and Tommi S. Jaakkola. (2018),
+“On the robustness of interpretability methods”
+arXiv preprint arXiv:1806.08049
+ 
+kaggle website
+ 
+shapley papers
+ 
+shapley book
