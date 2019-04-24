@@ -4,11 +4,9 @@ author: "Sam Taylor"
 date: "25/04/2019"
 output:
   slidy_presentation: default
-  ioslides_presentation: default
-  beamer_presentation: default
+  powerpoint_presentation: default
 ---
 
- 
 ```{r setup, include=FALSE, echo =FALSE, warning=FALSE}
 knitr::opts_chunk$set(cache=TRUE)
 #knitr::opts_chunk$set(echo = FALSE)
@@ -94,13 +92,14 @@ rf_model <- mlr::train(rf_learner, class_task)
  
 Introduction
 ====================================
- 
+
 - Interpretability and why do we need it?
 - Interpretable Models
 - Permutation Importances
 - Partial Dependancy Plots
 - LIME
 - Shapley Values
+- Use Case
  
 Interpretability & why we need it
 ====================================
@@ -110,25 +109,22 @@ Interpretability & why we need it
 - Debugging & Feature Engineering
 - Informing Decision Making
  
+<center> 
 ![](images/accuracy_tradeoff.png)
+</center>
 
 Facebook implements explainability on Newsfeeds
 ====================================
- 
-![https://www.theguardian.com/technology/2019/apr/01/why-am-i-seeing-this-new-facebook-tool-to-demystify-news-feed](images/facebook.png)
 
- 
-The Problem
-====================================
- 
-German Credit Dataset, identify good and bad loans based on a number of different variables including account balance, loan duration, loan amount, number of dependants, purpose of loan, age and if the loanee is employed.
- 
-1000 records split 2/3 training and 1/3 holdout test set.
- 
+<center>  
+![https://www.theguardian.com/technology/2019/apr/01/why-am-i-seeing-this-new-facebook-tool-to-demystify-news-feed](images/facebook.png)
+</center>
+
 Interpretable Models (Logistic Regression)
 ====================================
  
-- Deploying interpretable models sacrificing performance but maximising explainability of the model.
+- Deploying interpretable models sacrificing performance but maximising explainability of the model, especially in cases of non-linear data.
+
 - Coefficients of Logistic Regression represent the impact on the Log Odds based on a one unit change in the feature value
  
 ```{r logistic_regression, echo = FALSE, warning=FALSE}
@@ -148,52 +144,35 @@ tibble(terms = names(terms), values = values$.) %>% mutate(positive = values >0)
  
 ```
  
-Interpretable Models (Logistic Regression)
-====================================
- 
-The modeling of the predictions as a weighted sum makes it transparent how predictions are produced. And with Lasso we can ensure that the number of features used remains small.
- 
-Many people use linear regression models. This means that in many places it is accepted for predictive modeling and doing inference. There is a high level of collective experience and expertise, including teaching materials on linear regression models and software implementations. Linear regression can be found in R, Python, Java, Julia, Scala, Javascript, …
- 
-Mathematically, it is straightforward to estimate the weights and you have a guarantee to find optimal weights (given all assumptions of the linear regression model are met by the data).
- 
-Together with the weights you get confidence intervals, tests, and solid statistical theory. There are also many extensions of the linear regression model (see chapter on GLM, GAM and more).
-4.1.9 Disadvantages
- 
-Linear regression models can only represent linear relationships, i.e. a weighted sum of the input features. Each nonlinearity or interaction has to be hand-crafted and explicitly given to the model as an input feature.
- 
-Linear models are also often not that good regarding predictive performance, because the relationships that can be learned are so restricted and usually oversimplify how complex reality is.
- 
-The interpretation of a weight can be unintuitive because it depends on all other features. A feature with high positive correlation with the outcome y and another feature might get a negative weight in the linear model, because, given the other correlated feature, it is negatively correlated with y in the high-dimensional space. Completely correlated features make it even impossible to find a unique solution for the linear equation. An example: You have a model to predict the value of a house and have features like number of rooms and size of the house. House size and number of rooms are highly correlated: the bigger a house is, the more rooms it has. If you take both features into a linear model, it might happen, that the size of the house is the better predictor and gets a large positive weight. The number of rooms might end up getting a negative weight, because, given that a house has the same size, increasing the number of rooms could make it less valuable or the linear equation becomes less stable, when the correlation is too strong.
- 
 Interpretable Models (Decision Trees)
 ====================================
  
-- Explanation (Quick Summary)
+- Tree based models split the data multiple times based a loss function (eg. Gini)
+
 - Decision Trees are easy to explain to a human (if they are short!) with a straightforward visualisation.
-- Bias/Variance Tradeoff
+
+- Bias/Variance Tradeoff.
  
 ```{r, echo =FALSE}
- 
 decision_tree <- rpart(good_loan~., data = credit_train)
  
 rpart.plot(decision_tree)
- 
 ```
  
 Permutation Importance
 ====================================
  
-- Permutation importance is calculated after a model has been fitted. So we won't change the model or change what predictions we'd get for a given value of height, sock-count, etc.
- 
-- Instead we will ask the following question: If I randomly shuffle a single column of the validation data, leaving the target and all other columns in place, how would that affect the accuracy of predictions in that now-shuffled data?
- 
+- We measure the importance of a feature by calculating the increase in the model’s prediction error after permuting the feature.
+
+- A feature is “important” if shuffling its values increases the model error, because in this case the model relied on the feature for the prediction. 
+
+- A feature is “unimportant” if shuffling its values leaves the model error unchanged, because in this case the model ignored the feature for the prediction. 
+
 ```{r rf, echo=FALSE}
  
 # Get Permutation Importances
  
-importance <- generateFeatureImportanceData(class_task, method = 'permutation.importance',
-                              learner =rf_learner, measure =auc)
+importance <- generateFeatureImportanceData(class_task, method = 'permutation.importance', learner =rf_learner, measure =auc)
  
 # Plot Importance
  
@@ -207,11 +186,9 @@ importance$res %>% gather(feature, importance) %>%
 Partial Dependance Plots
 ====================================
  
-- Like permutation importance, partial dependence plots are calculated after a model has been fit.
+- "The partial dependence plot shows the marginal effect one or two features have on the predicted outcome of a machine learning model" (J. H. Friedman 2001). 
  
-- we repeatedly alter the value for one variable to make a series of predictions. We could predict the outcome if the team had the ball only 40% of the time. We then predict with them having the ball 50% of the time. Then predict again for 60%. And so on. We trace out predicted outcomes (on the vertical axis) as we move from small values of ball possession to large values (on the horizontal axis).
- 
--  we plot the average predicted outcome on the vertical axis.
+- Repeatedly altering the value for one variable to make a series of predictions, plotting predicted outcomes on the vertical axis and variable of interest on on the horizontal axis.
  
 ```{r PDP, echo = FALSE}
  
@@ -230,24 +207,23 @@ tibble(percent_good = pd_plots$data$good,loan_duration = pd_plots$data$loan_dura
 LIME
 ====================================
  
-Behind the workings of lime lies the (big) assumption that every complex model is linear on a local scale. While this is not justified in the paper it is not difficult to convince yourself that this is generally sound — you usually expect two very similar observations to behave predictably even in a complex model. lime then takes this assumption to its natural conclusion by asserting that it is possible to fit a simple model around a single observation that will mimic how the global model behaves at that locality. The simple model can then be used to explain the predictions of the more complex model locally.
+- Assumption is that every complex model is linear on a local scale. It is possible to fit a simple model around a single observation that will mimic how the global model behaves at that locality. 
  
-The general approach lime takes to achieving this goal is as follows
- 
-- For each prediction to explain, permute the observation n times.
-- Let the complex model predict the outcome of all permuted observations.
-- Calculate the distance from all permutations to the original observation.
-- Convert the distance to a similarity score.
-- Select m features best describing the complex model outcome from the permuted data.
-- Fit a simple model to the permuted data, explaining the complex model outcome with the m features from the permuted data weighted by    its similarity to the original observation.
-- Extract the feature weights from the simple model and use these as explanations for the complex models local behavior.
- 
-It is clear from the above that there’s much wiggle-room in order to optimize the explanation. Chief among the choices that influence the quality of the explanation is how permutations are created, how permutation similarity is calculated, how, and how many, features are selected, and which model is used as the simple model. Some of these choices are hard-coded into lime, while others can be influenced by the user.
- 
+<center>   
+![](images/lime.png)
+</center>
+
+1. Select your instance of interest for which you want to have an explanation of
+   its black box prediction.
+2. Perturb your dataset and get the black box predictions for these new points.
+3. Weight the new samples according to their proximity to the instance of interest.
+4. Train a weighted, interpretable model on the dataset with the variations.
+5. Explain the prediction by interpreting the local model.
+
 LIME
 ====================================
  
-LIME Explanation of a single prediction using LASSO.
+- LIME Explanation of a single prediction using LASSO as local interpretable model.
  
 ```{r LIME, echo=FALSE}
  
@@ -265,7 +241,7 @@ explanation <- explain(credit_test[, -1], explainer, n_labels = 1, n_features = 
  
 # Plot Explanations
  
-single_explanation <- explanation %>% filter(case ==2 )
+single_explanation <- explanation[1:3, ]
  
 plot_features(single_explanation)
  
@@ -274,150 +250,79 @@ plot_features(single_explanation)
 LIME
 ====================================
  
-- The underlying machine learning model used for prediction can change however the interpretable model can be retained throughout. It    also allows for statements to be made about changes in predictions.
+- The underlying machine learning model used for prediction can change however the interpretable model can be retained throughout.
+
+- It also allows for statements to be made about changes in predictions.
  
-- Explanations can be made sparse through shrinkage methods (LASSO) or short decision trees which make them much more straightforward    to interpret. It is possible to use other features than the original model which are less abstract (eg. text embeddings vs presence    of words in sentences)
+- Explanations can be made sparse through shrinkage methods (LASSO) or 
+  short decision trees 
  
-- It may not necessarily be sufficient for full explanations which may not be practical for GDPR requirements or debugging any models    produced.
+- It may not necessarily be sufficient for full explanations which may not be practical for GDPR requirements or debugging any models produced.
  
 - LIME's fidelity measure provides an estimate of how good that particular model is and if it can be considered reliable.
  
-- Defining the neighbourhood
+- Many optimizers to be tuned!
  
 - Replicability of explanations?
- 
+
 I want to play a game...
 ====================================
- 
-Explanation - average marginal contribution across all possible coalitions. It takes the form of a null player if it isn't in the coalition (how much does it differ if this feature takes
-a base value rather than actual values). SHAP is slightly different to Shapley Values to avoid it becoming computationally intractable (2k) but the premise is the same.
-the premise is the same.
- 
-The Shapley value can be misinterpreted. The Shapley value of a feature value is not the difference of the predicted value after removing the feature from the model training. The interpretation of the Shapley value is: Given the current set of feature values, the contribution of a feature value to the difference between the actual prediction and the mean prediction is the estimated Shapley value.
- 
-Shapley Values (Single Prediction)
-====================================
 
+<center>
+![](images/shapley.png)
+</center>
+
+The Shapley value of a feature value is its contribution to the payout, weighted and summed over all possible feature value combinations. Where S is a subset of the features used in the model, x is the vector of feature values of the instance to be explained and p the number of features.
+
+1. Efficiency - The feature contributions must add up to the difference of prediction for x and the average. 
+
+2. Symmetry - The contributions of two feature values j and k should be the same if they contribute equally to all possible coalitions.
+
+3. Dummy - A feature j that does not change the predicted value – regardless of which coalition of feature values it is added to – should have a Shapley value of 0.
+
+4. Additivity - For a game with combined payouts val+val+ the respective Shapley values are as follows:
+
+Shapley Values - Single Prediction
+====================================
+<center> 
 ![](images/Screenshot 2019-04-24 at 12.10.34.png)
-<!-- import numpy as np -->
-<!-- import pandas as pd -->
-<!-- from sklearn.model_selection import train_test_split -->
-<!-- from sklearn.ensemble import RandomForestClassifier -->
-<!-- import shap  -->
-<!-- import matplotlib -->
+</center> 
 
-<!-- data = pd.read_csv("http://freakonometrics.free.fr/german_credit.csv") -->
-<!-- y = data['Creditability']  -->
-<!-- data=data.drop(['Creditability'], axis=1) -->
-<!-- feature_names = [i for i in data.columns if data[i].dtype in [np.int64, np.int64]] -->
-<!-- X = data[feature_names] -->
-<!-- train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=1) -->
-<!-- my_model = RandomForestClassifier(random_state=0).fit(train_X, train_y) -->
-
-<!-- row_to_show = 5 -->
-<!-- data_for_prediction = val_X.iloc[row_to_show]   -->
-
-<!-- # use 1 row of data here. Could use multiple rows if desired -->
-
-<!-- data_for_prediction_array = data_for_prediction.values.reshape(1, -1) -->
-
-<!-- my_model.predict_proba(data_for_prediction_array) -->
-
-<!-- # Create object that can calculate shap values -->
-<!-- explainer = shap.TreeExplainer(my_model) -->
-
-<!-- # Calculate Shap values -->
-<!-- shap_values = explainer.shap_values(data_for_prediction) -->
-
-<!-- # Plot SHAP Value -->
-
-<!-- shap.force_plot(explainer.expected_value[1], shap_values[1], data_for_prediction,matplotlib=True) -->
-
- 
-Shapley Values (Multiple Predictions)
+Shapley Values - All Predictions
 ====================================
  
+<center>  
 ![](images/Screenshot 2019-04-24 at 12.11.37.png)
-<!-- import numpy as np -->
-<!-- import pandas as pd -->
-<!-- from sklearn.model_selection import train_test_split -->
-<!-- from sklearn.ensemble import RandomForestClassifier -->
-<!-- import shap  -->
-<!-- import matplotlib -->
+</center> 
 
-<!-- shap.initjs() -->
-<!-- data = pd.read_csv("http://freakonometrics.free.fr/german_credit.csv") -->
-<!-- y = data['Creditability']  -->
-<!-- X=data.drop(['Creditability'], axis=1) -->
-
-<!-- train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=1) -->
-<!-- my_model = RandomForestClassifier(random_state=0).fit(train_X, train_y) -->
-
-<!-- # Create object that can calculate shap values -->
-<!-- explainer = shap.TreeExplainer(my_model) -->
-
-<!-- # calculate shap values. This is what we will plot. -->
-<!-- # Calculate shap_values for all of val_X rather than a single row, to have more data for plot. -->
-<!-- shap_values = explainer.shap_values(val_X) -->
-
-<!-- # Make plot. Index of [1] is explained in text below. -->
-<!-- shap.force_plot(explainer.expected_value[0], shap_values[1], val_X, link ='logit') -->
-
-Shapley Values (Summary Plots)
+Shapley Values - Summary Plots
 ====================================
 
+<center> 
 ![](images/Screenshot 2019-04-24 at 12.10.20.png)
-<!-- import numpy as np -->
-<!-- import pandas as pd -->
-<!-- from sklearn.model_selection import train_test_split -->
-<!-- from sklearn.ensemble import RandomForestClassifier -->
-<!-- import shap  -->
-<!-- import matplotlib -->
+</center> 
 
-<!-- shap.initjs() -->
-<!-- data = pd.read_csv("http://freakonometrics.free.fr/german_credit.csv") -->
-<!-- y = data['Creditability']  -->
-<!-- X=data.drop(['Creditability'], axis=1) -->
-
-<!-- train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=1) -->
-<!-- my_model = RandomForestClassifier(random_state=0).fit(train_X, train_y) -->
-
-<!-- # Create object that can calculate shap values -->
-<!-- explainer = shap.TreeExplainer(my_model) -->
-
-<!-- # calculate shap values. This is what we will plot. -->
-<!-- # Calculate shap_values for all of val_X rather than a single row, to have more data for plot. -->
-<!-- shap_values = explainer.shap_values(val_X) -->
-
-<!-- # Make plot. Index of [1] is explained in text below. -->
-<!-- shap.summary_plot(shap_values[0], val_X) -->
-
-
-Shapley Values
+Shapley Values - Here be Dragons!
 ====================================
  
-- The difference between the prediction and the average prediction is fairly distributed among the feature values. This property distinguishes the Shapley value from other methods such as LIME. LIME does not guarantee that the prediction is fairly distributed among the features.
+- Differs from LIME in that the difference between the prediction and the average prediction is fairly distributed among the feature values. 
  
-- The Shapley value allows contrastive explanations. Instead of comparing a prediction to the average prediction of the entire dataset, you could compare it to a subset or even to a single data point. This contrastiveness is also something that local models like LIME do not have.
+- Computing time (2k possible coalitions) - sampling coalitions may assist here.
  
-- The Shapley value requires a lot of computing time. In 99.9% of real-world problems, only the approximate solution is feasible. An exact computation of the Shapley value is computationally expensive because there are 2k possible coalitions of the feature values. Sampling coalitions may assist here.
+- Shapley values provide complete explanations (not sparse!) and will always use all the features.
  
-- The Shapley value is the wrong explanation method if you seek sparse explanations. Explanations created with the Shapley value method always use all the features.
- 
-- The Shapley value returns a simple value per feature, but no prediction model like LIME. This means it cannot be used to make statements about changes in prediction for changes in the input, such as: “If I were to earn €300 more a year, my credit score would increase by 5 points.”
+- No predictive model; it cannot be used to make statements about changes in prediction for changes in the input.
  
 Squaring the Circle
 ====================================
  
 - Permutation Importances => SHAP
-- Issues with compute (takes approx 7700 hours to work for entire case load) - TrainExplainer
+- Issues with compute (takes approx 7700 hours to work for entire case load) -   TreeExplainer
 - KMeans Clustering prior to reduce the number of explanations required.
 - NLP
 - "Unhelpful Features"
-- Making explanations sparse by excluding certain features which fall below a specific threshold.
- 
-{Example Plot}
- 
+- Making explanations sparse by excluding certain features which fall below a    specific threshold.
+
 References
 ====================================
  
@@ -430,4 +335,9 @@ arXiv preprint arXiv:1806.08049
  
 Shapley, Lloyd S. (1953) “A value for n-person games.”,
 Contributions to the Theory of Games 2.28: 307-317
+
+Ribeiro, M. Singh, S., Guestrin, C. (2016)
+"Why Should I Trust You?: Explaining the Predictions of Any Classifier" 
+
+
  
