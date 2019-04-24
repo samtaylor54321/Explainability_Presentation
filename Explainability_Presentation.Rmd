@@ -3,8 +3,8 @@ title: 'Through the Looking Glass: Explainability in Machine Learning'
 author: "Sam Taylor"
 date: "25/04/2019"
 output:
-  slidy_presentation: default
   powerpoint_presentation: default
+  slidy_presentation: default
 ---
 
 ```{r setup, include=FALSE, echo =FALSE, warning=FALSE}
