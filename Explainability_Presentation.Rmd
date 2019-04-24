@@ -1,11 +1,14 @@
 ---
-title: 'Through the Looking Glass: Interpretability in Machine Learning'
-author: 'Sam Taylor,  Github: @samtaylor54321'
-date: "25/04/2019"
-output: slidy_presentation
+title: "Untitled"
+author: "Sam Taylor"
+date: "24/04/2019"
+output:
+  slidy_presentation: default
+  ioslides_presentation: default
 ---
+
  
-```{r setup, include=FALSE, echo =FALSE}
+```{r setup, include=FALSE, echo =FALSE, warning=FALSE}
 knitr::opts_chunk$set(cache=TRUE)
 #knitr::opts_chunk$set(echo = FALSE)
  
@@ -21,7 +24,10 @@ library(caret)
 library(mmpf)
 library(lime)
 library(iml)
- 
+library(reticulate)
+library(rpart)
+library(rpart.plot)
+
 # Load Dataset
  
 credit_raw <- evtree::GermanCredit
@@ -67,6 +73,22 @@ credit_test <- credit_processed[-trainIndex, ]
  
 class_task <- makeClassifTask(data=credit_train, target="good_loan", positive='good')
  
+# create glm learner
+ 
+glm_learner <- makeLearner(cl="classif.logreg", predict.type ='prob')
+ 
+# train glm learner on task
+ 
+glm_model <- mlr::train(glm_learner, class_task)
+ 
+# create random forest learner
+ 
+rf_learner <- makeLearner(cl="classif.randomForest", predict.type ='prob')
+ 
+# Train random forest learner on task
+ 
+rf_model <- mlr::train(rf_learner, class_task)
+ 
 ```
  
 Introduction
@@ -87,36 +109,31 @@ Interpretability & why we need it
 - Debugging & Feature Engineering
 - Informing Decision Making
  
-![](images/accuracy_tradeoff.png)
+```{r accuracy}
+print(" ![](images/accuracy_tradeoff.png)")
+```
  
 Facebook implements explainability on Newsfeeds
 ====================================
  
-![https://www.theguardian.com/technology/2019/apr/01/why-am-i-seeing-this-new-facebook-tool-to-demystify-news-feed](images/facebook.png)
+```{r facebook}
+print("- ![https://www.theguardian.com/technology/2019/apr/01/why-am-i-seeing-this-new-facebook-tool-to-demystify-news-feed](images/facebook.png) ")
+```
  
-Intelligent Triage
+The Problem
 ====================================
  
-DWP needs to provide a welfare system to the population of the UK, but needs to decide which customers are cheating the system and which aren't. How do use machine learning to do this and be able to explain to our customers why this is the case.
- 
-A toy example - German Credit Dataset, identify good and bad loans based on a number of different variables including account balance, loan duration, loan amount, number of dependants, purpose of loan, age and if the loanee is employed.
+German Credit Dataset, identify good and bad loans based on a number of different variables including account balance, loan duration, loan amount, number of dependants, purpose of loan, age and if the loanee is employed.
  
 1000 records split 2/3 training and 1/3 holdout test set.
  
-Approach 1: Interpretable Models
+Interpretable Models (Logistic Regression)
 ====================================
  
-- Deploying interpretable models, sacrificing performance but maximising explainability of the model.
+- Deploying interpretable models sacrificing performance but maximising explainability of the model.
+- Coefficients of Logistic Regression represent the impact on the Log Odds based on a one unit change in the feature value
  
 ```{r logistic_regression, echo = FALSE, warning=FALSE}
- 
-# Set learner
- 
-glm_learner <- makeLearner(cl="classif.logreg", predict.type ='prob')
- 
-# Train learner on task
- 
-glm_model <- mlr::train(glm_learner, class_task)
  
 # coefficientS
  
@@ -133,18 +150,40 @@ tibble(terms = names(terms), values = values$.) %>% mutate(positive = values >0)
  
 ```
  
-Performance of Logistic Regression Model
+Interpretable Models (Logistic Regression)
+====================================
  
-```{r logreg_performance, echo = FALSE, warning=FALSE}
+The modeling of the predictions as a weighted sum makes it transparent how predictions are produced. And with Lasso we can ensure that the number of features used remains small.
  
-# Assess model performance
+Many people use linear regression models. This means that in many places it is accepted for predictive modeling and doing inference. There is a high level of collective experience and expertise, including teaching materials on linear regression models and software implementations. Linear regression can be found in R, Python, Java, Julia, Scala, Javascript, …
  
-glm_pred <- predict(object=glm_model,newdata=credit_test)
+Mathematically, it is straightforward to estimate the weights and you have a guarantee to find optimal weights (given all assumptions of the linear regression model are met by the data).
  
-performance(glm_pred, measures = list(f1, auc))
+Together with the weights you get confidence intervals, tests, and solid statistical theory. There are also many extensions of the linear regression model (see chapter on GLM, GAM and more).
+4.1.9 Disadvantages
+ 
+Linear regression models can only represent linear relationships, i.e. a weighted sum of the input features. Each nonlinearity or interaction has to be hand-crafted and explicitly given to the model as an input feature.
+ 
+Linear models are also often not that good regarding predictive performance, because the relationships that can be learned are so restricted and usually oversimplify how complex reality is.
+ 
+The interpretation of a weight can be unintuitive because it depends on all other features. A feature with high positive correlation with the outcome y and another feature might get a negative weight in the linear model, because, given the other correlated feature, it is negatively correlated with y in the high-dimensional space. Completely correlated features make it even impossible to find a unique solution for the linear equation. An example: You have a model to predict the value of a house and have features like number of rooms and size of the house. House size and number of rooms are highly correlated: the bigger a house is, the more rooms it has. If you take both features into a linear model, it might happen, that the size of the house is the better predictor and gets a large positive weight. The number of rooms might end up getting a negative weight, because, given that a house has the same size, increasing the number of rooms could make it less valuable or the linear equation becomes less stable, when the correlation is too strong.
+ 
+Interpretable Models (Decision Trees)
+====================================
+ 
+- Explanation (Quick Summary)
+- Decision Trees are easy to explain to a human (if they are short!) with a straightforward visualisation.
+- Bias/Variance Tradeoff
+ 
+```{r, echo =FALSE}
+ 
+decision_tree <- rpart(good_loan~., data = credit_train)
+ 
+rpart.plot(decision_tree)
+ 
 ```
  
-Approach 2: Permutation Importance
+Permutation Importance
 ====================================
  
 - Permutation importance is calculated after a model has been fitted. So we won't change the model or change what predictions we'd get for a given value of height, sock-count, etc.
@@ -152,13 +191,6 @@ Approach 2: Permutation Importance
 - Instead we will ask the following question: If I randomly shuffle a single column of the validation data, leaving the target and all other columns in place, how would that affect the accuracy of predictions in that now-shuffled data?
  
 ```{r rf, echo=FALSE}
-# Set learner
- 
-rf_learner <- makeLearner(cl="classif.randomForest", predict.type ='prob')
- 
-# Train learner on task
- 
-rf_model <- mlr::train(rf_learner, class_task)
  
 # Get Permutation Importances
  
@@ -174,15 +206,7 @@ importance$res %>% gather(feature, importance) %>%
   xlab("") + ylab("Permutation Importance") + scale_fill_hue(h = c(200, 300))
 ```
  
-Assess model performance
- 
-```{r rf_performance, echo=FALSE}
-rf_pred <- predict(object=rf_model,newdata=credit_test)
- 
-performance(rf_pred, measures = list(f1, auc)) %>% knitr::kable()
-```
- 
-Approach 3: Partial Dependance Plots
+Partial Dependance Plots
 ====================================
  
 - Like permutation importance, partial dependence plots are calculated after a model has been fit.
@@ -193,17 +217,9 @@ Approach 3: Partial Dependance Plots
  
 ```{r PDP, echo = FALSE}
  
-# Generate Learner
- 
-xgb_learner <- makeLearner(cl="classif.xgboost", predict.type ='prob')
- 
-# Train learner on task
- 
-xgb_model <- mlr::train(xgb_learner, class_task)
- 
 # Generate Partial Dependance Plot
  
-pd_plots <- generatePartialDependenceData(xgb_model, class_task)
+pd_plots <- generatePartialDependenceData(rf_model, class_task)
  
 tibble(percent_good = pd_plots$data$good,loan_duration = pd_plots$data$loan_duration) %>%
   filter(!is.na(loan_duration)) %>%
@@ -213,33 +229,51 @@ tibble(percent_good = pd_plots$data$good,loan_duration = pd_plots$data$loan_dura
  
 ```
  
-Assess model performance
- 
-```{r}
-# Assess model performance
- 
-xgb_pred <- predict(object=xgb_model,newdata=credit_test)
- 
-performance(xgb_pred, measures = list(f1, auc)) %>% knitr::kable()
-```
- 
-Approach 4: LIME
+LIME
 ====================================
  
-Explanation - fitting a local interpretible model to the feature  space in order to
-explain a specific prediction.
+Behind the workings of lime lies the (big) assumption that every complex model is linear on a local scale. While this is not justified in the paper it is not difficult to convince yourself that this is generally sound — you usually expect two very similar observations to behave predictably even in a complex model. lime then takes this assumption to its natural conclusion by asserting that it is possible to fit a simple model around a single observation that will mimic how the global model behaves at that locality. The simple model can then be used to explain the predictions of the more complex model locally.
  
-Approach 4: LIME
+The general approach lime takes to achieving this goal is as follows
+ 
+- For each prediction to explain, permute the observation n times.
+- Let the complex model predict the outcome of all permuted observations.
+- Calculate the distance from all permutations to the original observation.
+- Convert the distance to a similarity score.
+- Select m features best describing the complex model outcome from the permuted data.
+- Fit a simple model to the permuted data, explaining the complex model outcome with the m features from the permuted data weighted by    its similarity to the original observation.
+- Extract the feature weights from the simple model and use these as explanations for the complex models local behavior.
+ 
+It is clear from the above that there’s much wiggle-room in order to optimize the explanation. Chief among the choices that influence the quality of the explanation is how permutations are created, how permutation similarity is calculated, how, and how many, features are selected, and which model is used as the simple model. Some of these choices are hard-coded into lime, while others can be influenced by the user.
+ 
+LIME
 ====================================
  
-```{r}
+LIME Explanation of a single prediction using LASSO.
  
+```{r LIME, echo = FALSE}
  
+# Build Caret Model for ease
+ 
+caret_model <- caret::train(credit_train[, -1], credit_train$good_loan, method = 'rf')
+ 
+# Create an explainer object
+ 
+explainer <- lime(credit_train[, -1], caret_model)
+ 
+# Explain new observation
+ 
+explanation <- explain(credit_test[, -1], explainer, n_labels = 1, n_features = 5, feature_select ='lasso_path')
+ 
+# Plot Explanations
+ 
+single_explanation <- explanation %>% filter(case ==2 )
+ 
+plot_features(single_explanation)
  
 ```
  
- 
-Approach 4: LIME
+LIME
 ====================================
  
 - The underlying machine learning model used for prediction can change however the interpretable model can be retained throughout. It    also allows for statements to be made about changes in predictions.
@@ -254,7 +288,7 @@ Approach 4: LIME
  
 - Replicability of explanations?
  
-Approach 5: SHAP
+I want to play a game...
 ====================================
  
 Explanation - average marginal contribution across all possible coalitions. It takes the form of a null player if it isn't in the coalition (how much does it differ if this feature takes
@@ -263,22 +297,49 @@ the premise is the same.
  
 The Shapley value can be misinterpreted. The Shapley value of a feature value is not the difference of the predicted value after removing the feature from the model training. The interpretation of the Shapley value is: Given the current set of feature values, the contribution of a feature value to the difference between the actual prediction and the mean prediction is the estimated Shapley value.
  
-Approach 5: SHAP
+Shapley Values
 ====================================
  
-Graphic (Shapley Plots) - Single Case
+```{python}
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+
+data = pd.read_csv('../input/fifa-2018-match-statistics/FIFA 2018 Statistics.csv')
+y = (data['Man of the Match'] == "Yes")  # Convert from string "Yes"/"No" to binary
+feature_names = [i for i in data.columns if data[i].dtype in [np.int64, np.int64]]
+X = data[feature_names]
+train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=1)
+my_model = RandomForestClassifier(random_state=0).fit(train_X, train_y)
+
+row_to_show = 5
+data_for_prediction = val_X.iloc[row_to_show]  
+# use 1 row of data here. Could use multiple rows if desired
+data_for_prediction_array = data_for_prediction.values.reshape(1, -1)
+
+
+my_model.predict_proba(data_for_prediction_array)
+
+import shap  
+
+# Create object that can calculate shap values
+explainer = shap.TreeExplainer(my_model)
+
+# Calculate Shap values
+shap_values = explainer.shap_values(data_for_prediction)
+```
  
-Approach 5: SHAP
+Shapley Values
 ====================================
  
 Graphic (Shapley Plots) - Agg Case
  
-Approach 5: SHAP
+Shapley Values
 ====================================
  
 Graphic (Shapley Plots) - Further Development
  
-Approach 5: SHAP
+Shapley Values
 ====================================
  
 - The difference between the prediction and the average prediction is fairly distributed among the feature values. This property distinguishes the Shapley value from other methods such as LIME. LIME does not guarantee that the prediction is fairly distributed among the features.
@@ -291,14 +352,17 @@ Approach 5: SHAP
  
 - The Shapley value returns a simple value per feature, but no prediction model like LIME. This means it cannot be used to make statements about changes in prediction for changes in the input, such as: “If I were to earn €300 more a year, my credit score would increase by 5 points.”
  
-Intelligent Triage
+Squaring the Circle
 ====================================
  
-Permutation Importances  => SHAP (Tree Explainer)
-NLP (example graphic)
-Issues with compute (takes approx 7700 hours to work for entire UC load)
-Making explanations sparse by excluding certain features which fall below a specific threshold.
-KMeans Clustering prior to reduce the number of explanations required.
+- Permutation Importances => SHAP
+- Issues with compute (takes approx 7700 hours to work for entire case load) - TrainExplainer
+- KMeans Clustering prior to reduce the number of explanations required.
+- NLP
+- "Unhelpful Features"
+- Making explanations sparse by excluding certain features which fall below a specific threshold.
+ 
+{Example Plot}
  
 References
 ====================================
@@ -310,8 +374,6 @@ Alvarez-Melis, David, and Tommi S. Jaakkola. (2018),
 “On the robustness of interpretability methods”
 arXiv preprint arXiv:1806.08049
  
-kaggle website
+Shapley, Lloyd S. (1953) “A value for n-person games.”,
+Contributions to the Theory of Games 2.28: 307-317
  
-shapley papers
- 
-shapley book
