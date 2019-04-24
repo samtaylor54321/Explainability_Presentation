@@ -1,10 +1,11 @@
 ---
-title: "Untitled"
+title: 'Through the Looking Glass: Explainability in Machine Learning'
 author: "Sam Taylor"
-date: "24/04/2019"
+date: "25/04/2019"
 output:
   slidy_presentation: default
   ioslides_presentation: default
+  beamer_presentation: default
 ---
 
  
@@ -109,16 +110,13 @@ Interpretability & why we need it
 - Debugging & Feature Engineering
 - Informing Decision Making
  
-```{r accuracy}
-print(" ![](images/accuracy_tradeoff.png)")
-```
- 
+![](images/accuracy_tradeoff.png)
+
 Facebook implements explainability on Newsfeeds
 ====================================
  
-```{r facebook}
-print("- ![https://www.theguardian.com/technology/2019/apr/01/why-am-i-seeing-this-new-facebook-tool-to-demystify-news-feed](images/facebook.png) ")
-```
+![https://www.theguardian.com/technology/2019/apr/01/why-am-i-seeing-this-new-facebook-tool-to-demystify-news-feed](images/facebook.png)
+
  
 The Problem
 ====================================
@@ -251,7 +249,7 @@ LIME
  
 LIME Explanation of a single prediction using LASSO.
  
-```{r LIME, echo = FALSE}
+```{r LIME, echo=FALSE}
  
 # Build Caret Model for ease
  
@@ -284,7 +282,7 @@ LIME
  
 - LIME's fidelity measure provides an estimate of how good that particular model is and if it can be considered reliable.
  
-- Defining the neighbourhood in which the local model is fit is tricky
+- Defining the neighbourhood
  
 - Replicability of explanations?
  
@@ -297,48 +295,104 @@ the premise is the same.
  
 The Shapley value can be misinterpreted. The Shapley value of a feature value is not the difference of the predicted value after removing the feature from the model training. The interpretation of the Shapley value is: Given the current set of feature values, the contribution of a feature value to the difference between the actual prediction and the mean prediction is the estimated Shapley value.
  
-Shapley Values
+Shapley Values (Single Prediction)
+====================================
+
+![](images/Screenshot 2019-04-24 at 12.10.34.png)
+<!-- import numpy as np -->
+<!-- import pandas as pd -->
+<!-- from sklearn.model_selection import train_test_split -->
+<!-- from sklearn.ensemble import RandomForestClassifier -->
+<!-- import shap  -->
+<!-- import matplotlib -->
+
+<!-- data = pd.read_csv("http://freakonometrics.free.fr/german_credit.csv") -->
+<!-- y = data['Creditability']  -->
+<!-- data=data.drop(['Creditability'], axis=1) -->
+<!-- feature_names = [i for i in data.columns if data[i].dtype in [np.int64, np.int64]] -->
+<!-- X = data[feature_names] -->
+<!-- train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=1) -->
+<!-- my_model = RandomForestClassifier(random_state=0).fit(train_X, train_y) -->
+
+<!-- row_to_show = 5 -->
+<!-- data_for_prediction = val_X.iloc[row_to_show]   -->
+
+<!-- # use 1 row of data here. Could use multiple rows if desired -->
+
+<!-- data_for_prediction_array = data_for_prediction.values.reshape(1, -1) -->
+
+<!-- my_model.predict_proba(data_for_prediction_array) -->
+
+<!-- # Create object that can calculate shap values -->
+<!-- explainer = shap.TreeExplainer(my_model) -->
+
+<!-- # Calculate Shap values -->
+<!-- shap_values = explainer.shap_values(data_for_prediction) -->
+
+<!-- # Plot SHAP Value -->
+
+<!-- shap.force_plot(explainer.expected_value[1], shap_values[1], data_for_prediction,matplotlib=True) -->
+
+ 
+Shapley Values (Multiple Predictions)
 ====================================
  
-```{python}
-import numpy as np
-import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
+![](images/Screenshot 2019-04-24 at 12.11.37.png)
+<!-- import numpy as np -->
+<!-- import pandas as pd -->
+<!-- from sklearn.model_selection import train_test_split -->
+<!-- from sklearn.ensemble import RandomForestClassifier -->
+<!-- import shap  -->
+<!-- import matplotlib -->
 
-data = pd.read_csv('../input/fifa-2018-match-statistics/FIFA 2018 Statistics.csv')
-y = (data['Man of the Match'] == "Yes")  # Convert from string "Yes"/"No" to binary
-feature_names = [i for i in data.columns if data[i].dtype in [np.int64, np.int64]]
-X = data[feature_names]
-train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=1)
-my_model = RandomForestClassifier(random_state=0).fit(train_X, train_y)
+<!-- shap.initjs() -->
+<!-- data = pd.read_csv("http://freakonometrics.free.fr/german_credit.csv") -->
+<!-- y = data['Creditability']  -->
+<!-- X=data.drop(['Creditability'], axis=1) -->
 
-row_to_show = 5
-data_for_prediction = val_X.iloc[row_to_show]  
-# use 1 row of data here. Could use multiple rows if desired
-data_for_prediction_array = data_for_prediction.values.reshape(1, -1)
+<!-- train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=1) -->
+<!-- my_model = RandomForestClassifier(random_state=0).fit(train_X, train_y) -->
 
+<!-- # Create object that can calculate shap values -->
+<!-- explainer = shap.TreeExplainer(my_model) -->
 
-my_model.predict_proba(data_for_prediction_array)
+<!-- # calculate shap values. This is what we will plot. -->
+<!-- # Calculate shap_values for all of val_X rather than a single row, to have more data for plot. -->
+<!-- shap_values = explainer.shap_values(val_X) -->
 
-import shap  
+<!-- # Make plot. Index of [1] is explained in text below. -->
+<!-- shap.force_plot(explainer.expected_value[0], shap_values[1], val_X, link ='logit') -->
 
-# Create object that can calculate shap values
-explainer = shap.TreeExplainer(my_model)
-
-# Calculate Shap values
-shap_values = explainer.shap_values(data_for_prediction)
-```
- 
-Shapley Values
+Shapley Values (Summary Plots)
 ====================================
- 
-Graphic (Shapley Plots) - Agg Case
- 
-Shapley Values
-====================================
- 
-Graphic (Shapley Plots) - Further Development
- 
+
+![](images/Screenshot 2019-04-24 at 12.10.20.png)
+<!-- import numpy as np -->
+<!-- import pandas as pd -->
+<!-- from sklearn.model_selection import train_test_split -->
+<!-- from sklearn.ensemble import RandomForestClassifier -->
+<!-- import shap  -->
+<!-- import matplotlib -->
+
+<!-- shap.initjs() -->
+<!-- data = pd.read_csv("http://freakonometrics.free.fr/german_credit.csv") -->
+<!-- y = data['Creditability']  -->
+<!-- X=data.drop(['Creditability'], axis=1) -->
+
+<!-- train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=1) -->
+<!-- my_model = RandomForestClassifier(random_state=0).fit(train_X, train_y) -->
+
+<!-- # Create object that can calculate shap values -->
+<!-- explainer = shap.TreeExplainer(my_model) -->
+
+<!-- # calculate shap values. This is what we will plot. -->
+<!-- # Calculate shap_values for all of val_X rather than a single row, to have more data for plot. -->
+<!-- shap_values = explainer.shap_values(val_X) -->
+
+<!-- # Make plot. Index of [1] is explained in text below. -->
+<!-- shap.summary_plot(shap_values[0], val_X) -->
+
+
 Shapley Values
 ====================================
  
