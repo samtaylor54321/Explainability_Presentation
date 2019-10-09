@@ -1,0 +1,9 @@
+Steps for the competition
+
+1. Create a Kaggle account at https://www.kaggle.com
+2. Click https://www.kaggle.com/c/ghouls-goblins-and-ghosts-boo/overviewand , under  ‘Notebooks’, hit ‘New Notebook’ and choose the notebook option
+3. You are now in an interactive Kaggle kernel. Run the first cell and you should see the paths to all of the data needed for the challenge
+4. Run !pwd and you should see your current working directory. Navigate to the directory with the data and begin !
+
+Some recommended models to try are:
+RandomForests, LightGBM, AdaBoost, XGBoost, GradientBoosting, SVMs.

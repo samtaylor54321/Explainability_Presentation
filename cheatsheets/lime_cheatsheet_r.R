@@ -2,6 +2,7 @@
 
 # Cheatsheet for R LIME  
 # Taken from LIME github page
+# https://github.com/thomasp85/lime
 
 # LIME ------------------------------------------------------------------------
 
